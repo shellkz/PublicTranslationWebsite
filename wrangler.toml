@@ -1,0 +1,5 @@
+name = "public-translation-website"
+compatibility_date = "2026-08-12"
+
+[assets]
+directory = "dist"
