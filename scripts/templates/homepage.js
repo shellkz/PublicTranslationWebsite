@@ -42,14 +42,10 @@ function renderHomepage({ latestTranslations, translatorList }) {
   const body = `
 <section class="hero">
   <div>
-    <div class="hero-eyebrow">非營利 · 開源典藏 · 讀者共築</div>
-    <h1 class="serif">把海的那一邊<br>寫成的故事,<span class="kanji-accent">渡</span>給你。</h1>
-    <p class="lede">一個由讀者與譯者共同維護的翻譯典藏站。沒有廣告,沒有付費牆——你的每一次閱讀,就是給譯者最直接的回饋。</p>
-    <div class="hero-actions">
-      <a class="btn btn-primary serif" href="#latest">開始閱讀 →</a>
-      <a class="btn btn-ghost" href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/CONTRIBUTING.md">關於這個計畫</a>
-    </div>
-    <div class="no-ads-note"><span class="dot"></span>本站永久無廣告、無追蹤、原始碼公開於 GitHub</div>
+    <div class="hero-eyebrow">描述，描述，描述</div>
+    <h1 class="serif">描述描述描述描述。</h1>
+    <p class="lede">描述描述描述描述描述描述描述描述描述描述描述描述描述。</p>
+    <div class="no-ads-note"><span class="dot"></span>描述描述描述描述描述描述描述描述描述描述描述</div>
   </div>
   <div class="shelf">
     <div class="shelf-line"></div>
@@ -80,7 +76,7 @@ function renderHomepage({ latestTranslations, translatorList }) {
 </section>
 `;
 
-  return { title: '渡書 とうしょ｜個人翻譯典藏站', body };
+  return { title: '標題標題標題標題標題', body };
 }
 
 module.exports = { renderHomepage };

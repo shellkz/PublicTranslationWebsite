@@ -29,8 +29,8 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<l
 <header>
   <div class="header-inner">
     <div class="logo">
-      <span class="logo-cn serif">渡書</span>
-      <span class="logo-jp">とうしょ TOSHO</span>
+      <span class="logo-cn serif">標題</span>
+      <span class="logo-jp">副標題</span>
     </div>
     <nav>
       <a href="/#latest">最新譯作</a>
@@ -46,8 +46,8 @@ ${body}
 <footer id="about">
   <div class="footer-inner">
     <div>
-      <div class="footer-brand serif">渡書 とうしょ</div>
-      <div class="footer-note">典藏並非商品。所有翻譯內容由譯者自願提供,本站不置入任何廣告或付費機制,僅作為讀者與譯者相遇的場所。</div>
+      <div class="footer-brand serif">標題</div>
+      <div class="footer-note">描述描述描述描述描述描述描述描述</div>
     </div>
     <div class="footer-links">
       <a href="https://github.com/shellkz/PublicTranslationWebsite">GitHub 原始碼</a>
