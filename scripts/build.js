@@ -4,9 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 const MarkdownIt = require('markdown-it');
+const { renderLayout } = require('./templates/layout');
+const { renderHomepage } = require('./templates/homepage');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
+const ASSETS_DIR = path.join(ROOT, 'assets');
 const OUT_DIR = path.join(ROOT, 'dist');
 
 const md = new MarkdownIt({ html: false, linkify: true });
@@ -349,14 +352,36 @@ ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ''}
     writeHtml(path.join(OUT_DIR, 'tags', tag, 'index.html'), layout({ title: `標籤:${tag}`, body }));
   }
 
-  // ---- / (首頁,列出全部譯文) ----
-  const allList = translations
+  // ---- / (首頁:最新譯作 + 譯者一覽,新版視覺,見 scripts/templates/) ----
+  const latestTranslations = translations
     .slice()
     .sort((a, b) => String(b.frontmatter.date || '').localeCompare(String(a.frontmatter.date || '')))
-    .map((t) => `<li><a href="/translations/${escapeHtml(t.uuid)}/">${escapeHtml(t.frontmatter.title)}</a> — <span class="meta">原作:${escapeHtml(pickLocalized(t.work.title))} · 譯者:${escapeHtml(t.translatorId)} · ${escapeHtml(t.frontmatter.date || '')}</span></li>`)
-    .join('\n');
-  const homeBody = `<h1>全部譯文(${translations.length})</h1><ul class="list">${allList}</ul>`;
-  writeHtml(path.join(OUT_DIR, 'index.html'), layout({ title: '首頁', body: homeBody }));
+    .slice(0, 8)
+    .map((t) => ({
+      url: `/translations/${t.uuid}/`,
+      title: t.frontmatter.title,
+      translatorId: t.translatorId,
+      date: t.frontmatter.date || null,
+      workTitle: pickLocalized(t.work.title),
+    }));
+
+  const translatorList = Object.keys(byTranslator).map((translatorId) => {
+    const profile = translators[translatorId] || {};
+    return {
+      url: `/translators/${translatorId}/`,
+      displayName: profile.display_name || translatorId,
+      bio: profile.bio || null,
+      count: byTranslator[translatorId].length,
+    };
+  });
+
+  const { title: homeTitle, body: homeBody } = renderHomepage({ latestTranslations, translatorList });
+  writeHtml(path.join(OUT_DIR, 'index.html'), renderLayout({ title: homeTitle, body: homeBody }));
+
+  // ---- 複製 assets/ 靜態資源(CSS/JS)到 dist/assets/ ----
+  if (fs.existsSync(ASSETS_DIR)) {
+    fs.cpSync(ASSETS_DIR, path.join(OUT_DIR, 'assets'), { recursive: true });
+  }
 
   return {
     translations: translations.length,
