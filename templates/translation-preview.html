@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奔跑吧,梅洛斯｜渡書 とうしょ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700;900&family=Shippori+Mincho:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  /* ===== 譯文內容頁 專用樣式(尚未併入 assets/css/style.css,設計預覽階段) ===== */
+
+  .breadcrumb{
+    max-width:720px; margin:0 auto; padding:28px 28px 0;
+    font-size:12.5px; color:var(--gray); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .breadcrumb a{color:var(--indigo);}
+  .breadcrumb a:hover{text-decoration:underline;}
+  .breadcrumb .sep{opacity:.5;}
+
+  .article-header{
+    max-width:720px; margin:0 auto; padding:36px 28px 40px;
+    border-bottom:1px solid rgba(32,31,27,0.12);
+  }
+  .article-header .work-jp{
+    font-size:12.5px; color:var(--gray); letter-spacing:.15em; margin-bottom:12px;
+  }
+  .article-header h1{
+    font-family:'Shippori Mincho','Noto Serif TC',serif;
+    font-size:clamp(30px,4.5vw,44px); font-weight:700; line-height:1.45; margin-bottom:20px;
+  }
+  .byline{
+    display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+    font-size:13.5px; color:#4b4a44;
+  }
+  .byline a{color:var(--indigo); border-bottom:1px solid transparent;}
+  .byline a:hover{border-color:var(--indigo);}
+  .byline .dot{color:var(--gray); font-size:11px;}
+
+  .article-body{
+    max-width:720px; margin:0 auto; padding:48px 28px 8px;
+    font-family:'Noto Serif TC', serif;
+    font-size:17px; line-height:2;
+    color:var(--ink);
+  }
+  .article-body p{margin-bottom:1.6em;}
+  .article-body p:first-of-type::first-letter{
+    font-family:'Shippori Mincho',serif;
+    font-size:3.1em; float:left; line-height:.85;
+    padding:.05em .14em 0 0; color:var(--indigo);
+  }
+  .article-end-mark{
+    text-align:center; color:var(--gold); letter-spacing:.4em; font-size:12px;
+    margin:8px 0 52px;
+  }
+
+  .citation-block{
+    max-width:720px; margin:0 auto; padding:0 28px 64px;
+  }
+  .citation-card{
+    background:var(--paper-deep); border:1px solid rgba(32,31,27,0.08);
+    border-radius:2px; padding:24px 26px; font-size:12.5px; color:#5a584f;
+  }
+  .citation-card .row{display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
+  .citation-card .row:last-child{margin-bottom:0;}
+  .citation-card .label{color:var(--gray); flex-shrink:0; min-width:6em;}
+  .citation-card a{color:var(--indigo);}
+  .citation-card a:hover{text-decoration:underline;}
+  .license-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; letter-spacing:.05em; padding:3px 11px;
+    border:1px solid var(--gold); color:#8a6a3f; border-radius:20px;
+  }
+
+  @media (max-width:600px){
+    .article-body{font-size:16px; line-height:1.9;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-cn serif">渡書</span>
+      <span class="logo-jp">とうしょ TOSHO</span>
+    </div>
+    <nav>
+      <a href="/#latest">最新譯作</a>
+      <a href="/#series">連載系列</a>
+      <a href="/#translators">譯者</a>
+      <a href="/#about">關於本站</a>
+    </nav>
+  </div>
+</header>
+
+<div class="breadcrumb">
+  <a href="/">首頁</a><span class="sep">›</span>
+  <a href="/works/hashire-merosu_aozora1567/">走れメロス</a><span class="sep">›</span>
+  <span>奔跑吧,梅洛斯</span>
+</div>
+
+<div class="article-header">
+  <div class="work-jp serif">走れメロス · HASHIRE MEROSU</div>
+  <h1>奔跑吧,梅洛斯</h1>
+  <div class="byline">
+    <span>譯者・<a href="/translators/lienhua-lin/">蓮花</a></span>
+    <span class="dot">·</span>
+    <span>原作・<a href="/source-authors/dazai-osamu_Q317685/">太宰治</a></span>
+    <span class="dot">·</span>
+    <span>2026-05-03</span>
+  </div>
+</div>
+
+<article class="article-body">
+  <p>梅洛斯激憤了。他決心,必須除掉那個邪惡又不義的國王。</p>
+  <p>梅洛斯不懂政治,他只是村子裡的一個牧羊人,吹著笛子,和羊群一起生活。可是對於邪惡,他比誰都敏感。</p>
+  <p>(此處為預覽版面示意,實際內容依 build 時讀入的譯文正文原樣呈現,長度不定。若這篇譯文屬於多層轉譯——例如依據的是別人已翻好的中間語言版本——引言區塊下方會多一行「經 ○○○ 譯本轉譯」的說明,直接引用內容資料裡的 `sourceTranslator`,設計上跟這裡的 byline 同一個視覺層級,不需要另外開版位。)</p>
+</article>
+<div class="article-end-mark">◆ ◆ ◆</div>
+
+<div class="citation-block">
+  <div class="citation-card">
+    <div class="row"><span class="label">來源版本</span><a href="https://www.aozora.gr.jp/cards/000035/files/1567_14913.html">青空文庫・太宰治全集3</a>(日文)</div>
+    <div class="row"><span class="label">本譯文授權</span><span class="license-badge">CC BY-SA 4.0</span></div>
+  </div>
+</div>
+
+<footer id="about">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand serif">渡書 とうしょ</div>
+      <div class="footer-note">典藏並非商品。所有翻譯內容由譯者自願提供,本站不置入任何廣告或付費機制,僅作為讀者與譯者相遇的場所。</div>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/shellkz/PublicTranslationWebsite">GitHub 原始碼</a>
+      <a href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/CONTRIBUTING.md">投稿須知</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
