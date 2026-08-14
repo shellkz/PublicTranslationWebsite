@@ -1,8 +1,9 @@
 'use strict';
 
-// 共用外殼(<head> + header + footer)。目前只有 homepage.js 使用,
-// 但刻意設計成跟頁面內容無關,未來其他頁面(translation/work/translator...)
-// 要換成這份新版視覺時可以直接複用,不用重寫 header/footer/CSS 引用。
+// 共用外殼(<head> + header + footer)。build.js 統一透過這裡輸出每一種頁面
+// (homepage/works-index/translation/work/translator/source-author/
+// source-translator/tag),刻意設計成跟頁面內容無關,新增頁面類型時只要吃
+// { title, body, canonical } 就能直接套用,不用重寫 header/footer/CSS 引用。
 
 function escapeHtml(str) {
   return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({
@@ -43,9 +44,23 @@ ${body}
 
 <footer id="about">
   <div class="footer-inner">
-    <div>
-      <div class="footer-brand serif">標題</div>
-      <div class="footer-note">描述描述描述描述描述描述描述描述</div>
+    <div class="footer-about">
+      <div class="footer-brand serif">公領域書籍翻譯閱讀平台</div>
+      <div class="footer-note">青空文庫、古騰堡計畫等公版書籍的社群翻譯典藏站,透過 GitHub Pull Request 收錄譯者貢獻的中譯版本,人人皆可免費閱讀、轉載、改作。</div>
+      <dl class="footer-roles">
+        <div class="footer-role">
+          <dt>讀者</dt>
+          <dd>免費閱讀、轉載、改作站上所有譯文(<a href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/LICENSE">CC BY-SA 4.0</a>),不需要註冊帳號。</dd>
+        </div>
+        <div class="footer-role">
+          <dt>譯者</dt>
+          <dd>用 GitHub 帳號提交譯文,著作權仍屬於你本人,PR 通過自動檢查即可上線,目前不須額外等待人工審核。詳見<a href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/docs/翻譯者指南.md">翻譯者指南</a>。</dd>
+        </div>
+        <div class="footer-role">
+          <dt>開發者</dt>
+          <dd>站台程式碼採 <a href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/scripts/LICENSE">MIT</a> 授權,歡迎提交 PR 改進功能。詳見<a href="https://github.com/shellkz/PublicTranslationWebsite/blob/main/docs/開發者指南.md">開發者指南</a>。</dd>
+        </div>
+      </dl>
     </div>
     <div class="footer-links">
       <a href="https://github.com/shellkz/PublicTranslationWebsite">GitHub 原始碼</a>
