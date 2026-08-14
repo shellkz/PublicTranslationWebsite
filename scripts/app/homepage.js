@@ -8,12 +8,20 @@ const AVATAR_COLORS = ['var(--indigo)', 'var(--seal)', '#5b6b4f', '#8a6a3f', '#3
 // 只吃扁平、已經整理好的顯示用資料(view model),不碰 work_id/edition_url
 // 這類內部資料結構——那些查找/反查邏輯留在 build.js,這裡純粹是「資料轉 HTML」。
 
+function renderMetaField(label, value) {
+  return `<div class="card-meta"><span class="meta-label">${escapeHtml(label)}</span><span class="meta-value">${escapeHtml(value)}</span></div>`;
+}
+
 function renderLatestCard(item, index) {
   const coverClass = COVER_CLASSES[index % COVER_CLASSES.length];
   return `<a class="card" href="${escapeHtml(item.url)}">
-      <div class="cover ${coverClass}"><span class="cover-title">${escapeHtml(item.workTitle)}</span></div>
+      <div class="cover ${coverClass}">
+        <span class="cover-title">${escapeHtml(item.workNativeTitle)}</span>
+      </div>
       <div class="card-title-cn">${escapeHtml(item.title)}</div>
-      <div class="card-meta">譯者・${escapeHtml(item.translatorId)}${item.date ? `　·　${escapeHtml(item.date)}` : ''}</div>
+      ${renderMetaField('作者', item.authorName)}
+      ${renderMetaField('譯者', item.translatorId)}
+      ${item.date ? renderMetaField('更新於', item.date) : ''}
     </a>`;
 }
 
@@ -32,7 +40,7 @@ function renderTranslatorCard(item, index) {
 
 /**
  * @param {object} data
- * @param {Array<{url:string,title:string,translatorId:string,date:?string,workTitle:string}>} data.latestTranslations
+ * @param {Array<{url:string,title:string,translatorId:string,authorName:string,date:?string,workNativeTitle:string}>} data.latestTranslations
  * @param {Array<{url:string,displayName:string,bio:?string,count:number}>} data.translatorList
  */
 function renderHomepage({ latestTranslations, translatorList }) {

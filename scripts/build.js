@@ -4,8 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 const MarkdownIt = require('markdown-it');
-const { renderLayout } = require('./templates/layout');
-const { renderHomepage } = require('./templates/homepage');
+const { renderLayout } = require('./app/layout');
+const { renderHomepage } = require('./app/homepage');
+const { renderTranslation } = require('./app/translation');
+const { renderWork } = require('./app/work');
+const { renderTranslator } = require('./app/translator');
+const { renderSourceAuthor } = require('./app/source-author');
+const { renderSourceTranslator } = require('./app/source-translator');
+const { renderTag } = require('./app/tag');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
@@ -69,37 +75,8 @@ function writeHtml(outPath, html) {
   fs.writeFileSync(outPath, html, 'utf8');
 }
 
-function escapeHtml(str) {
-  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[c]));
-}
-
-function layout({ title, body, canonical }) {
-  return `<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)}</title>
-${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<style>
-  body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; }
-  nav a { margin-right: .75rem; }
-  .meta { color: #555; font-size: .9rem; }
-  ul.list { list-style: none; padding: 0; }
-  ul.list li { margin-bottom: .75rem; }
-  hr { margin: 2rem 0; }
-</style>
-</head>
-<body>
-${body}
-</body>
-</html>
-`;
+function writePage(outPath, { title, body, canonical }) {
+  writeHtml(outPath, renderLayout({ title, body, canonical }));
 }
 
 // ---------- load registries ----------
@@ -196,39 +173,14 @@ function resolveAll() {
   return { works, sourceAuthors, sourceTranslators, translators, translations };
 }
 
-// ---------- render ----------
-
-function renderTranslationPage(t) {
-  const authorName = t.author ? pickLocalized(t.author.names) : '(未知作者)';
-  const workTitle = pickLocalized(t.work.title);
-  const editionTranslatorName = t.sourceTranslator ? pickLocalized(t.sourceTranslator.names) : null;
-
-  const body = `
-<nav><a href="/">首頁</a> <a href="/works/${escapeHtml(t.work.id)}/">回作品頁</a></nav>
-<h1>${escapeHtml(t.frontmatter.title)}</h1>
-<p class="meta">
-  譯者:<a href="/translators/${escapeHtml(t.translatorId)}/">${escapeHtml(t.translatorId)}</a> ·
-  原作:${escapeHtml(workTitle)} · 原作者:<a href="/source-authors/${escapeHtml(t.author.id)}/">${escapeHtml(authorName)}</a>
-</p>
-<article>
-${md.render(t.bodyMarkdown)}
-</article>
-<hr>
-<p class="meta">
-  來源版本:<a href="${escapeHtml(t.frontmatter.edition_url)}">${escapeHtml(t.frontmatter.edition_url)}</a>(語言:${escapeHtml(t.edition.language)})
-  ${editionTranslatorName ? ` · 該版本譯者:${escapeHtml(editionTranslatorName)}` : ''}<br>
-  本譯文授權:<a href="/LICENSE">${escapeHtml(SITE_LICENSE)}</a>
-</p>
-`;
-  return layout({ title: t.frontmatter.title, body, canonical: `/translations/${t.uuid}/` });
-}
+// ---------- build ----------
 
 function build() {
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
 
   const { works, sourceAuthors, sourceTranslators, translators, translations } = resolveAll();
 
-  // group translations by work / translator / source-author / source-translator / tag
+  // group translations by work / translator / tag
   const byWork = {};
   const byTranslator = {};
   const byTag = {};
@@ -243,7 +195,29 @@ function build() {
 
   // ---- /translations/{uuid}/ ----
   for (const t of translations) {
-    writeHtml(path.join(OUT_DIR, 'translations', t.uuid, 'index.html'), renderTranslationPage(t));
+    const authorName = t.author ? pickLocalized(t.author.names) : '(未知作者)';
+    const sourceTranslatorName = t.sourceTranslator ? pickLocalized(t.sourceTranslator.names) : null;
+
+    const page = renderTranslation({
+      title: t.frontmatter.title,
+      workUrl: `/works/${t.work.id}/`,
+      workTitle: pickLocalized(t.work.title),
+      workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
+      translatorId: t.translatorId,
+      translatorUrl: `/translators/${t.translatorId}/`,
+      authorName,
+      authorUrl: `/source-authors/${t.work.author_id}/`,
+      date: t.frontmatter.date || null,
+      bodyHtml: md.render(t.bodyMarkdown),
+      editionUrl: t.frontmatter.edition_url,
+      editionPublisher: t.edition.publisher || null,
+      editionLanguage: t.edition.language,
+      sourceTranslatorName,
+      sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.id}/` : null,
+      license: SITE_LICENSE,
+      canonical: `/translations/${t.uuid}/`,
+    });
+    writePage(path.join(OUT_DIR, 'translations', t.uuid, 'index.html'), page);
   }
 
   // ---- /translations.json ----
@@ -264,65 +238,66 @@ function build() {
   for (const [workId, work] of Object.entries(works)) {
     const author = sourceAuthors[work.author_id];
     const authorName = author ? pickLocalized(author.names) : '(未知作者)';
-    const list = (byWork[workId] || [])
-      .map((t) => {
-        const editionLang = t.edition ? t.edition.language : '?';
-        const via = t.sourceTranslator ? `,經 ${escapeHtml(pickLocalized(t.sourceTranslator.names))} 譯本轉譯` : '';
-        return `<li><a href="/translations/${escapeHtml(t.uuid)}/">${escapeHtml(t.frontmatter.title)}</a> — 譯者:<a href="/translators/${escapeHtml(t.translatorId)}/">${escapeHtml(t.translatorId)}</a>(依據語言:${escapeHtml(editionLang)}${via}) — ${escapeHtml(t.frontmatter.excerpt || '')}</li>`;
-      })
-      .join('\n');
 
-    const editionsList = (work.editions || [])
-      .map((e) => `<li>${escapeHtml(e.language)} — <a href="${escapeHtml(e.url)}">${escapeHtml(e.url)}</a>(${escapeHtml(e.publisher || '')} ${escapeHtml(e.date || '')}, ${escapeHtml(e.copyright_status)})</li>`)
-      .join('\n');
-
-    const body = `
-<nav><a href="/">首頁</a></nav>
-<h1>${escapeHtml(pickLocalized(work.title))}</h1>
-<p class="meta">
-  原作者:<a href="/source-authors/${escapeHtml(work.author_id)}/">${escapeHtml(authorName)}</a> ·
-  原文語言:${escapeHtml(work.original_language)} ·
-  分類:${escapeHtml(work.category || '')} ·
-  標籤:${(work.tags || []).map((tg) => `<a href="/tags/${escapeHtml(tg)}/">${escapeHtml(tg)}</a>`).join('、')}
-</p>
-<h2>已知來源版本</h2>
-<ul class="list">${editionsList}</ul>
-<h2>站內譯本(${(byWork[workId] || []).length})</h2>
-<ul class="list">${list}</ul>
-`;
-    writeHtml(path.join(OUT_DIR, 'works', workId, 'index.html'), layout({ title: pickLocalized(work.title), body }));
+    const page = renderWork({
+      title: pickLocalized(work.title),
+      nativeTitle: pickLocalized(work.title, ['ja', 'en', 'romaji', 'zh']),
+      authorName,
+      authorUrl: `/source-authors/${work.author_id}/`,
+      originalLanguage: work.original_language,
+      category: work.category || null,
+      tags: (work.tags || []).map((tg) => ({ name: tg, url: `/tags/${tg}/` })),
+      editions: (work.editions || []).map((e) => ({
+        language: e.language,
+        url: e.url,
+        publisher: e.publisher || null,
+        date: e.date || null,
+        copyrightStatus: e.copyright_status,
+      })),
+      translations: (byWork[workId] || []).map((t) => ({
+        url: `/translations/${t.uuid}/`,
+        title: t.frontmatter.title,
+        translatorId: t.translatorId,
+        translatorUrl: `/translators/${t.translatorId}/`,
+        editionLanguage: t.edition ? t.edition.language : '?',
+        sourceTranslatorName: t.sourceTranslator ? pickLocalized(t.sourceTranslator.names) : null,
+        sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.id}/` : null,
+        excerpt: t.frontmatter.excerpt || null,
+      })),
+      canonical: `/works/${workId}/`,
+    });
+    writePage(path.join(OUT_DIR, 'works', workId, 'index.html'), page);
   }
 
   // ---- /translators/{id}/ ----
   const allTranslatorIds = new Set([...Object.keys(translators), ...Object.keys(byTranslator)]);
   for (const translatorId of allTranslatorIds) {
     const profile = translators[translatorId] || {};
-    const list = (byTranslator[translatorId] || [])
-      .map((t) => `<li><a href="/translations/${escapeHtml(t.uuid)}/">${escapeHtml(t.frontmatter.title)}</a> — 原作:${escapeHtml(pickLocalized(t.work.title))}</li>`)
-      .join('\n');
-    const body = `
-<nav><a href="/">首頁</a></nav>
-<h1>${escapeHtml(profile.display_name || translatorId)}</h1>
-${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ''}
-<h2>翻譯作品(${(byTranslator[translatorId] || []).length})</h2>
-<ul class="list">${list}</ul>
-`;
-    writeHtml(path.join(OUT_DIR, 'translators', translatorId, 'index.html'), layout({ title: profile.display_name || translatorId, body }));
+
+    const page = renderTranslator({
+      displayName: profile.display_name || translatorId,
+      bio: profile.bio || null,
+      translations: (byTranslator[translatorId] || []).map((t) => ({
+        url: `/translations/${t.uuid}/`,
+        title: t.frontmatter.title,
+        workTitle: pickLocalized(t.work.title),
+        excerpt: t.frontmatter.excerpt || null,
+      })),
+      canonical: `/translators/${translatorId}/`,
+    });
+    writePage(path.join(OUT_DIR, 'translators', translatorId, 'index.html'), page);
   }
 
   // ---- /source-authors/{id}/ ----
   for (const [authorId, author] of Object.entries(sourceAuthors)) {
     const worksOfAuthor = Object.entries(works).filter(([, w]) => w.author_id === authorId);
-    const list = worksOfAuthor
-      .map(([wid, w]) => `<li><a href="/works/${escapeHtml(wid)}/">${escapeHtml(pickLocalized(w.title))}</a></li>`)
-      .join('\n');
-    const body = `
-<nav><a href="/">首頁</a></nav>
-<h1>${escapeHtml(pickLocalized(author.names))}</h1>
-<h2>站內收錄作品(${worksOfAuthor.length})</h2>
-<ul class="list">${list}</ul>
-`;
-    writeHtml(path.join(OUT_DIR, 'source-authors', authorId, 'index.html'), layout({ title: pickLocalized(author.names), body }));
+
+    const page = renderSourceAuthor({
+      name: pickLocalized(author.names),
+      works: worksOfAuthor.map(([wid, w]) => ({ url: `/works/${wid}/`, title: pickLocalized(w.title) })),
+      canonical: `/source-authors/${authorId}/`,
+    });
+    writePage(path.join(OUT_DIR, 'source-authors', authorId, 'index.html'), page);
   }
 
   // ---- /source-translators/{id}/ ----
@@ -330,29 +305,33 @@ ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ''}
     const relatedWorks = Object.entries(works).filter(([, w]) =>
       (w.editions || []).some((e) => e.translator_id === stId)
     );
-    const list = relatedWorks
-      .map(([wid, w]) => `<li><a href="/works/${escapeHtml(wid)}/">${escapeHtml(pickLocalized(w.title))}</a></li>`)
-      .join('\n');
-    const body = `
-<nav><a href="/">首頁</a></nav>
-<h1>${escapeHtml(pickLocalized(st.names))}</h1>
-<p class="meta">譯入語言:${escapeHtml(st.language)}</p>
-<h2>相關作品(${relatedWorks.length})</h2>
-<ul class="list">${list}</ul>
-`;
-    writeHtml(path.join(OUT_DIR, 'source-translators', stId, 'index.html'), layout({ title: pickLocalized(st.names), body }));
+
+    const page = renderSourceTranslator({
+      name: pickLocalized(st.names),
+      language: st.language,
+      works: relatedWorks.map(([wid, w]) => ({ url: `/works/${wid}/`, title: pickLocalized(w.title) })),
+      canonical: `/source-translators/${stId}/`,
+    });
+    writePage(path.join(OUT_DIR, 'source-translators', stId, 'index.html'), page);
   }
 
   // ---- /tags/{tag}/ ----
   for (const [tag, list] of Object.entries(byTag)) {
-    const items = list
-      .map((t) => `<li><a href="/translations/${escapeHtml(t.uuid)}/">${escapeHtml(t.frontmatter.title)}</a></li>`)
-      .join('\n');
-    const body = `<nav><a href="/">首頁</a></nav><h1>標籤:${escapeHtml(tag)}</h1><ul class="list">${items}</ul>`;
-    writeHtml(path.join(OUT_DIR, 'tags', tag, 'index.html'), layout({ title: `標籤:${tag}`, body }));
+    const page = renderTag({
+      tag,
+      translations: list.map((t) => ({
+        url: `/translations/${t.uuid}/`,
+        title: t.frontmatter.title,
+        workTitle: pickLocalized(t.work.title),
+        translatorId: t.translatorId,
+        translatorUrl: `/translators/${t.translatorId}/`,
+      })),
+      canonical: `/tags/${tag}/`,
+    });
+    writePage(path.join(OUT_DIR, 'tags', tag, 'index.html'), page);
   }
 
-  // ---- / (首頁:最新譯作 + 譯者一覽,新版視覺,見 scripts/templates/) ----
+  // ---- / (首頁:最新譯作 + 譯者一覽) ----
   const latestTranslations = translations
     .slice()
     .sort((a, b) => String(b.frontmatter.date || '').localeCompare(String(a.frontmatter.date || '')))
@@ -361,8 +340,9 @@ ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ''}
       url: `/translations/${t.uuid}/`,
       title: t.frontmatter.title,
       translatorId: t.translatorId,
+      authorName: t.author ? pickLocalized(t.author.names) : '(未知作者)',
       date: t.frontmatter.date || null,
-      workTitle: pickLocalized(t.work.title),
+      workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
     }));
 
   const translatorList = Object.keys(byTranslator).map((translatorId) => {
@@ -375,8 +355,8 @@ ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ''}
     };
   });
 
-  const { title: homeTitle, body: homeBody } = renderHomepage({ latestTranslations, translatorList });
-  writeHtml(path.join(OUT_DIR, 'index.html'), renderLayout({ title: homeTitle, body: homeBody }));
+  const homePage = renderHomepage({ latestTranslations, translatorList });
+  writePage(path.join(OUT_DIR, 'index.html'), homePage);
 
   // ---- 複製 assets/ 靜態資源(CSS/JS)到 dist/assets/ ----
   if (fs.existsSync(ASSETS_DIR)) {
