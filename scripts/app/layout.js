@@ -33,9 +33,6 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<l
       <span class="logo-jp">副標題</span>
     </div>
     <nav>
-      <a href="/#latest">最新譯作</a>
-      <a href="/#series">連載系列</a>
-      <a href="/#translators">譯者</a>
       <a href="/#about">關於本站</a>
     </nav>
   </div>

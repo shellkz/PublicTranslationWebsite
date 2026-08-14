@@ -48,32 +48,13 @@ function renderHomepage({ latestTranslations, translatorList }) {
   const translatorsHtml = translatorList.map(renderTranslatorCard).join('\n');
 
   const body = `
-<section class="hero">
-  <div>
-    <div class="hero-eyebrow">描述，描述，描述</div>
-    <h1 class="serif">描述描述描述描述。</h1>
-    <p class="lede">描述描述描述描述描述描述描述描述描述描述描述描述描述。</p>
-    <div class="no-ads-note"><span class="dot"></span>描述描述描述描述描述描述描述描述描述描述描述</div>
-  </div>
-  <div class="shelf">
-    <div class="shelf-line"></div>
-  </div>
-</section>
+
 
 <section class="block" id="latest">
   <div class="block-head">
     <div class="block-title serif">最新譯作 <span class="jp">Latest Translations</span></div>
   </div>
   ${latestTranslations.length ? `<div class="grid">${latestHtml}</div>` : '<p class="block-empty-note">目前還沒有譯文,敬請期待。</p>'}
-</section>
-
-<section class="block" id="series" style="background:var(--paper-deep); border-top:1px solid rgba(32,31,27,0.08); border-bottom:1px solid rgba(32,31,27,0.08); max-width:none; padding-left:0; padding-right:0;">
-  <div style="max-width:1180px; margin:0 auto; padding:0 28px;">
-    <div class="block-head">
-      <div class="block-title serif">連載系列 <span class="jp">Ongoing Series</span></div>
-    </div>
-    <p class="block-empty-note">此功能尚未推出。</p>
-  </div>
 </section>
 
 <section class="block" id="translators">
