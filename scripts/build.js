@@ -12,6 +12,7 @@ const { renderTranslator } = require('./app/translator');
 const { renderSourceAuthor } = require('./app/source-author');
 const { renderSourceTranslator } = require('./app/source-translator');
 const { renderTag } = require('./app/tag');
+const { renderWorksIndex } = require('./app/works-index');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
@@ -48,6 +49,14 @@ function pickLocalized(value, fallbackKeyOrder = ['zh', 'romaji', 'ja', 'en']) {
   }
   const firstKey = Object.keys(value)[0];
   return firstKey ? value[firstKey] : null;
+}
+
+// 給讀者看的「這部作品叫什麼」,一律直接用 title.zh,不做語言 fallback——
+// 顯示原文(如日文假名)對只讀中文的讀者沒有意義,尤其是放大顯示的封面標題。
+// 只有明確要展示「原文標題」當引用/小字副標(如 translation.js 的 .work-jp、
+// work.js 的 .eyebrow)才用 pickLocalized(title, ['ja','en','romaji','zh']) 保留原文。
+function workDisplayTitle(work) {
+  return (work && work.title && work.title.zh) || '';
 }
 
 // gray-matter (js-yaml) auto-parses YYYY-MM-DD strings into Date objects;
@@ -201,7 +210,7 @@ function build() {
     const page = renderTranslation({
       title: t.frontmatter.title,
       workUrl: `/works/${t.work.id}/`,
-      workTitle: pickLocalized(t.work.title),
+      workTitle: workDisplayTitle(t.work),
       workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
       translatorId: t.translatorId,
       translatorUrl: `/translators/${t.translatorId}/`,
@@ -226,7 +235,7 @@ function build() {
     title: t.frontmatter.title,
     translator_id: t.translatorId,
     work_id: t.frontmatter.work_id,
-    work_title: pickLocalized(t.work.title),
+    work_title: workDisplayTitle(t.work),
     excerpt: t.frontmatter.excerpt || null,
     date: t.frontmatter.date || null,
     url: `/translations/${t.uuid}/`,
@@ -240,7 +249,7 @@ function build() {
     const authorName = author ? pickLocalized(author.names) : '(未知作者)';
 
     const page = renderWork({
-      title: pickLocalized(work.title),
+      title: workDisplayTitle(work),
       nativeTitle: pickLocalized(work.title, ['ja', 'en', 'romaji', 'zh']),
       authorName,
       authorUrl: `/source-authors/${work.author_id}/`,
@@ -269,6 +278,32 @@ function build() {
     writePage(path.join(OUT_DIR, 'works', workId, 'index.html'), page);
   }
 
+  // ---- /works/(全作品列表頁,work-level:一部作品一張卡,不分譯本) ----
+  const worksIndexEntries = Object.entries(works).map(([workId, w]) => {
+    const author = sourceAuthors[w.author_id];
+    const workTranslations = byWork[workId] || [];
+    const translatorIds = [...new Set(workTranslations.map((t) => t.translatorId))];
+    return {
+      url: `/works/${workId}/`,
+      workTitle: workDisplayTitle(w),
+      authorName: author ? pickLocalized(author.names) : '(未知作者)',
+      tags: w.tags || [],
+      category: w.category || null,
+      originalLanguage: w.original_language,
+      translatorIds,
+      translationCount: workTranslations.length,
+      excerpt: w.excerpt || null,
+    };
+  });
+
+  const worksIndexPage = renderWorksIndex({
+    entries: worksIndexEntries,
+    categories: [...new Set(Object.values(works).map((w) => w.category).filter(Boolean))].sort(),
+    languages: [...new Set(Object.values(works).map((w) => w.original_language).filter(Boolean))].sort(),
+    tags: Object.keys(byTag).sort(),
+  });
+  writePage(path.join(OUT_DIR, 'works', 'index.html'), worksIndexPage);
+
   // ---- /translators/{id}/ ----
   const allTranslatorIds = new Set([...Object.keys(translators), ...Object.keys(byTranslator)]);
   for (const translatorId of allTranslatorIds) {
@@ -280,7 +315,7 @@ function build() {
       translations: (byTranslator[translatorId] || []).map((t) => ({
         url: `/translations/${t.uuid}/`,
         title: t.frontmatter.title,
-        workTitle: pickLocalized(t.work.title),
+        workTitle: workDisplayTitle(t.work),
         excerpt: t.frontmatter.excerpt || null,
       })),
       canonical: `/translators/${translatorId}/`,
@@ -294,7 +329,7 @@ function build() {
 
     const page = renderSourceAuthor({
       name: pickLocalized(author.names),
-      works: worksOfAuthor.map(([wid, w]) => ({ url: `/works/${wid}/`, title: pickLocalized(w.title) })),
+      works: worksOfAuthor.map(([wid, w]) => ({ url: `/works/${wid}/`, title: workDisplayTitle(w) })),
       canonical: `/source-authors/${authorId}/`,
     });
     writePage(path.join(OUT_DIR, 'source-authors', authorId, 'index.html'), page);
@@ -309,7 +344,7 @@ function build() {
     const page = renderSourceTranslator({
       name: pickLocalized(st.names),
       language: st.language,
-      works: relatedWorks.map(([wid, w]) => ({ url: `/works/${wid}/`, title: pickLocalized(w.title) })),
+      works: relatedWorks.map(([wid, w]) => ({ url: `/works/${wid}/`, title: workDisplayTitle(w) })),
       canonical: `/source-translators/${stId}/`,
     });
     writePage(path.join(OUT_DIR, 'source-translators', stId, 'index.html'), page);
@@ -322,7 +357,7 @@ function build() {
       translations: list.map((t) => ({
         url: `/translations/${t.uuid}/`,
         title: t.frontmatter.title,
-        workTitle: pickLocalized(t.work.title),
+        workTitle: workDisplayTitle(t.work),
         translatorId: t.translatorId,
         translatorUrl: `/translators/${t.translatorId}/`,
       })),
@@ -342,7 +377,7 @@ function build() {
       translatorId: t.translatorId,
       authorName: t.author ? pickLocalized(t.author.names) : '(未知作者)',
       date: t.frontmatter.date || null,
-      workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
+      workTitle: workDisplayTitle(t.work),
     }));
 
   const translatorList = Object.keys(byTranslator).map((translatorId) => {

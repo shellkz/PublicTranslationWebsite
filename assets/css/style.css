@@ -406,3 +406,54 @@ footer{
 }
 .cta-note a{color:var(--seal); font-weight:600;}
 .cta-note a:hover{text-decoration:underline;}
+
+/* ===== 首頁搜尋框 ===== */
+.home-search{
+  max-width:1180px; margin:0 auto; padding:0 28px;
+  display:flex; gap:10px;
+}
+.home-search input[type="search"]{
+  flex:1; padding:12px 16px; border:1px solid rgba(32,31,27,.18);
+  border-radius:2px; font-size:14px; background:var(--paper); color:var(--ink);
+  font-family:'Noto Sans TC',sans-serif;
+}
+.home-search input[type="search"]:focus{ outline:none; border-color:var(--indigo); }
+.home-search button{
+  padding:12px 20px; border:none; border-radius:2px;
+  background:var(--indigo); color:var(--paper); cursor:pointer; font-size:16px;
+  transition:background .2s ease;
+}
+.home-search button:hover{ background:var(--indigo-deep); }
+
+/* ===== 全作品列表頁篩選表單 ===== */
+.works-filters{
+  max-width:1180px; margin:0 auto; padding:36px 28px 0;
+  display:flex; flex-wrap:wrap; gap:20px 28px;
+  border-top:1px solid rgba(32,31,27,0.12);
+}
+.filter-field{ display:flex; flex-direction:column; gap:6px; font-size:12.5px; }
+.filter-field label{ color:var(--gray); letter-spacing:.05em; }
+.filter-field input, .filter-field select{
+  padding:9px 12px; border:1px solid rgba(32,31,27,.18); border-radius:2px;
+  font-size:13.5px; background:var(--paper); color:var(--ink); font-family:inherit;
+  min-width:170px;
+}
+.filter-field input:focus, .filter-field select:focus{ outline:none; border-color:var(--indigo); }
+.filter-tags{ border:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+.filter-tags legend{ color:var(--gray); font-size:12.5px; letter-spacing:.05em; padding:0; margin-bottom:2px; }
+.filter-tags-options{ display:flex; flex-wrap:wrap; gap:6px 14px; max-width:420px; }
+.filter-tags-options label{ display:flex; align-items:center; gap:5px; font-size:12.5px; color:#4b4a44; cursor:pointer; }
+
+/* 尚無譯者的作品卡片 */
+.card-empty .cover{ opacity:.55; }
+.needs-translator{
+  margin-top:4px; font-size:11px; color:var(--seal); font-weight:600; letter-spacing:.03em;
+}
+
+/* 全作品列表頁封面右下角的「幾個譯本」標籤,0 個特別標紅,方便譯者一眼掃到可認領的作品 */
+.cover-count{
+  position:absolute; z-index:2; bottom:10px; right:10px;
+  font-size:9.5px; letter-spacing:.05em; padding:3px 8px;
+  background:rgba(239,234,224,0.9); color:var(--ink); border-radius:1px;
+}
+.cover-count.is-empty{ background:var(--seal); color:#fff; }
