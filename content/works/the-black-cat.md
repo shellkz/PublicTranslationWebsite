@@ -2,7 +2,7 @@
 uuid: 11111111-1111-4111-8111-111111111104
 title:
   en: The Black Cat
-  ja: 黒猫
+  ja: 黒猫CIテスト
   zh: 黑貓
 author_id: 22222222-2222-4222-8222-222222222204
 original_language: en
