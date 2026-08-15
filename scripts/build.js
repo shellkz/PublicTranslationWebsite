@@ -13,6 +13,7 @@ const { renderSourceAuthor } = require('./app/source-author');
 const { renderSourceTranslator } = require('./app/source-translator');
 const { renderTag } = require('./app/tag');
 const { renderWorksIndex } = require('./app/works-index');
+const { renderWorkshop } = require('./app/workshop');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
@@ -348,7 +349,11 @@ function build() {
     title: workDisplayTitle(w),
     authorName: sourceAuthors[w.author_id] ? pickLocalized(sourceAuthors[w.author_id].names) : null,
     wikidataId: w.wikidata_id || null,
-    editionUrls: (w.editions || []).map((e) => e.url),
+    editions: (w.editions || []).map((e) => ({
+      url: e.url,
+      language: e.language,
+      publisher: e.publisher || null,
+    })),
   }));
   ensureDirFor(path.join(OUT_DIR, 'works.json'));
   fs.writeFileSync(path.join(OUT_DIR, 'works.json'), JSON.stringify(worksJson, null, 2), 'utf8');
@@ -511,6 +516,9 @@ function build() {
 
   const homePage = renderHomepage({ latestTranslations, translatorList });
   writePage(path.join(OUT_DIR, 'index.html'), homePage);
+
+  // ---- /workshop/create-translation/ ----
+  writePage(path.join(OUT_DIR, 'workshop', 'create-translation', 'index.html'), renderWorkshop());
 
   // ---- 複製 assets/ 靜態資源(CSS/JS)到 dist/assets/ ----
   if (fs.existsSync(ASSETS_DIR)) {

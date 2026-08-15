@@ -439,16 +439,29 @@ footer{
 }
 .filter-field{ display:flex; flex-direction:column; gap:6px; font-size:12.5px; }
 .filter-field label{ color:var(--gray); letter-spacing:.05em; }
-.filter-field input, .filter-field select{
+.filter-field input, .filter-field select, .filter-field textarea{
   padding:9px 12px; border:1px solid rgba(32,31,27,.18); border-radius:2px;
   font-size:13.5px; background:var(--paper); color:var(--ink); font-family:inherit;
   min-width:170px;
 }
-.filter-field input:focus, .filter-field select:focus{ outline:none; border-color:var(--indigo); }
+.filter-field textarea{ resize:vertical; }
+.filter-field input:focus, .filter-field select:focus, .filter-field textarea:focus{ outline:none; border-color:var(--indigo); }
 .filter-tags{ border:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
 .filter-tags legend{ color:var(--gray); font-size:12.5px; letter-spacing:.05em; padding:0; margin-bottom:2px; }
 .filter-tags-options{ display:flex; flex-wrap:wrap; gap:6px 14px; max-width:420px; }
 .filter-tags-options label{ display:flex; align-items:center; gap:5px; font-size:12.5px; color:#4b4a44; cursor:pointer; }
+
+/* /workshop/ 表單 */
+.workshop-form{ max-width:640px; margin:0 auto; padding:36px 28px 60px; display:flex; flex-direction:column; gap:24px; border-top:1px solid rgba(32,31,27,0.12); }
+.workshop-fieldset{ border:1px solid rgba(32,31,27,.15); border-radius:2px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+.workshop-fieldset legend{ padding:0 6px; font-size:13px; letter-spacing:.05em; color:var(--ink); font-weight:600; }
+.workshop-fieldset .filter-field input, .workshop-fieldset .filter-field textarea{ width:100%; min-width:0; font-family:inherit; }
+.workshop-results{ font-size:12.5px; color:var(--gray); }
+.workshop-toggle{ align-self:flex-start; font-size:12.5px; background:none; border:none; color:var(--indigo); text-decoration:underline; cursor:pointer; padding:0; }
+.workshop-nested{ border-left:2px solid rgba(32,31,27,.12); padding-left:16px; margin-top:6px; display:flex; flex-direction:column; gap:14px; }
+.workshop-nested[hidden]{ display:none; }
+.workshop-submit{ align-self:flex-start; padding:11px 22px; background:var(--ink); color:var(--paper); border:none; border-radius:2px; font-size:13.5px; cursor:pointer; }
+.workshop-submit:hover{ opacity:.85; }
 
 /* 尚無譯者的作品卡片 */
 .card-empty .cover{ opacity:.55; }
