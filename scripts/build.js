@@ -65,16 +65,6 @@ function toPlainDate(value) {
   return value instanceof Date ? value.toISOString().slice(0, 10) : value;
 }
 
-const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
-
-function extractUuid(filename) {
-  const match = filename.match(UUID_RE);
-  if (!match) {
-    throw new Error(`檔名「${filename}」找不到符合格式的 UUID 段,無法作為身分識別碼`);
-  }
-  return match[0];
-}
-
 function ensureDirFor(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
@@ -90,84 +80,193 @@ function writePage(outPath, { title, body, canonical }) {
 
 // ---------- load registries ----------
 
+// translators/ 是唯一維持資料夾的類別(自身 profile + 多篇譯文的容器),
+// 資料夾名稱本身就是識別碼,沿用舊有的「掃資料夾、讀 description.md」邏輯。
 function loadRegistry(subdir) {
   const dir = path.join(CONTENT_DIR, subdir);
   const map = {};
   for (const id of listDirs(dir)) {
-    const data = { id, ...readDescription(path.join(dir, id)) };
+    map[id] = { id, ...readDescription(path.join(dir, id)) };
+  }
+  return map;
+}
+
+// works / source-authors / source-translators:單一檔案,不是資料夾,
+// 真正的識別碼是檔案內容裡的 uuid 欄位,檔名只是給人看的可讀前綴——見架構規格.md 第 1、2 節。
+function loadFlatRegistry(subdir, categoryLabel) {
+  const dir = path.join(CONTENT_DIR, subdir);
+  if (!fs.existsSync(dir)) return {};
+
+  const map = {};
+  const errors = [];
+
+  for (const filename of fs.readdirSync(dir).filter((f) => f.endsWith('.md'))) {
+    const fullPath = path.join(dir, filename);
+    const sourcePath = path.relative(ROOT, fullPath);
+    const parsed = matter(fs.readFileSync(fullPath, 'utf8'));
+    const data = parsed.data || {};
+
+    if (!data.uuid) {
+      errors.push(`[${sourcePath}] 缺少必填的 uuid 欄位`);
+      continue;
+    }
+    if (map[data.uuid]) {
+      errors.push(`[${sourcePath}] uuid "${data.uuid}" 與 [${map[data.uuid].sourcePath}] 重複,同一類別內 uuid 不得重複`);
+      continue;
+    }
+
     if (Array.isArray(data.editions)) {
       data.editions = data.editions.map((e) => ({ ...e, date: toPlainDate(e.date) }));
     }
-    map[id] = data;
+    map[data.uuid] = { ...data, sourcePath, filename };
   }
+
+  if (errors.length) {
+    throw new Error(`${categoryLabel} uuid 檢查失敗:\n` + errors.map((e) => '  - ' + e).join('\n'));
+  }
+
   return map;
 }
 
 function loadTranslations() {
   const translatorsDir = path.join(CONTENT_DIR, 'translators');
   const translations = [];
+  const seenUuids = new Map();
+  const errors = [];
+
   for (const translatorId of listDirs(translatorsDir)) {
     const translatorDir = path.join(translatorsDir, translatorId);
     const files = fs
       .readdirSync(translatorDir)
       .filter((f) => f.endsWith('.md') && f !== 'description.md');
+
     for (const filename of files) {
       const fullPath = path.join(translatorDir, filename);
+      const sourcePath = path.relative(ROOT, fullPath);
       const parsed = matter(fs.readFileSync(fullPath, 'utf8'));
-      const uuid = extractUuid(filename);
       const frontmatter = parsed.data || {};
       frontmatter.date = toPlainDate(frontmatter.date);
+
+      if (!frontmatter.uuid) {
+        errors.push(`[${sourcePath}] 缺少必填的 uuid 欄位`);
+        continue;
+      }
+      if (seenUuids.has(frontmatter.uuid)) {
+        errors.push(`[${sourcePath}] uuid "${frontmatter.uuid}" 與 [${seenUuids.get(frontmatter.uuid)}] 重複,全站譯文 uuid 不得重複`);
+        continue;
+      }
+      seenUuids.set(frontmatter.uuid, sourcePath);
+
       translations.push({
-        uuid,
+        uuid: frontmatter.uuid,
         filename,
         translatorId,
         frontmatter,
         bodyMarkdown: parsed.content || '',
-        sourcePath: path.relative(ROOT, fullPath),
+        sourcePath,
       });
     }
   }
+
+  if (errors.length) {
+    throw new Error('譯文 uuid 檢查失敗:\n' + errors.map((e) => '  - ' + e).join('\n'));
+  }
+
   return translations;
+}
+
+// ---------- 跨檔重複偵測(非阻擋,只警告)見架構規格.md 第 6 節 ----------
+
+const AOZORA_ID_RE = /aozora\.gr\.jp\/(?:cards\/\d+\/files\/(\d+)|index_pages\/person(\d+))/;
+const GUTENBERG_ID_RE = /gutenberg\.org\/(?:ebooks\/|cache\/epub\/)(\d+)/;
+
+function extractSiteId(url) {
+  if (!url) return null;
+  const aozora = url.match(AOZORA_ID_RE);
+  if (aozora) return `aozora:${aozora[1] || aozora[2]}`;
+  const gutenberg = url.match(GUTENBERG_ID_RE);
+  if (gutenberg) return `gutenberg:${gutenberg[1]}`;
+  return null;
+}
+
+// works 用 editions[].url(可能多筆),source-authors/source-translators 用 source_url(單一)
+function collectCandidateUrls(entry) {
+  if (Array.isArray(entry.editions)) return entry.editions.map((e) => e.url);
+  if (entry.source_url) return [entry.source_url];
+  return [];
+}
+
+function detectDuplicates(map, categoryLabel) {
+  const byWikidata = {};
+  const bySiteId = {};
+
+  for (const [uuid, entry] of Object.entries(map)) {
+    if (entry.wikidata_id) {
+      (byWikidata[entry.wikidata_id] ||= []).push(uuid);
+    } else {
+      for (const url of collectCandidateUrls(entry)) {
+        const siteId = extractSiteId(url);
+        if (siteId) (bySiteId[siteId] ||= new Set()).add(uuid);
+      }
+    }
+  }
+
+  const errors = [];
+  for (const [wid, uuids] of Object.entries(byWikidata)) {
+    if (uuids.length > 1) {
+      errors.push(`${categoryLabel}:wikidata_id "${wid}" 同時被 ${uuids.length} 筆資料使用(${uuids.join(', ')}),判定重複登記`);
+    }
+  }
+  for (const [sid, uuids] of Object.entries(bySiteId)) {
+    if (uuids.size > 1) {
+      errors.push(`${categoryLabel}:來源站編號 "${sid}" 同時被 ${[...uuids].join(', ')} 引用,判定重複登記`);
+    }
+  }
+  return errors;
 }
 
 // ---------- resolve references ----------
 
 function resolveAll() {
-  const works = loadRegistry('works');
-  const sourceAuthors = loadRegistry('source-authors');
-  const sourceTranslators = loadRegistry('source-translators');
+  const works = loadFlatRegistry('works', 'works/');
+  const sourceAuthors = loadFlatRegistry('source-authors', 'source-authors/');
+  const sourceTranslators = loadFlatRegistry('source-translators', 'source-translators/');
   const translators = loadRegistry('translators');
   const translations = loadTranslations();
 
-  const errors = [];
+  const errors = [
+    ...detectDuplicates(works, 'works'),
+    ...detectDuplicates(sourceAuthors, 'source-authors'),
+    ...detectDuplicates(sourceTranslators, 'source-translators'),
+  ];
 
   for (const t of translations) {
     const fm = t.frontmatter;
 
     const work = works[fm.work_id];
     if (!work) {
-      errors.push(`[${t.sourcePath}] work_id "${fm.work_id}" 在 /content/works/ 找不到對應資料夾`);
+      errors.push(`[${t.sourcePath}] work_id "${fm.work_id}" 在 /content/works/ 找不到 uuid 相符的檔案`);
       continue;
     }
     t.work = work;
 
     const author = sourceAuthors[work.author_id];
     if (!author) {
-      errors.push(`[${t.sourcePath}] 作品 "${fm.work_id}" 的 author_id "${work.author_id}" 在 /content/source-authors/ 找不到對應資料夾`);
+      errors.push(`[${t.sourcePath}] 作品 "${work.sourcePath}" 的 author_id "${work.author_id}" 在 /content/source-authors/ 找不到 uuid 相符的檔案`);
     }
     t.author = author || null;
 
     const editions = Array.isArray(work.editions) ? work.editions : [];
     const edition = editions.find((e) => e.url === fm.edition_url);
     if (!edition) {
-      errors.push(`[${t.sourcePath}] edition_url "${fm.edition_url}" 在作品 "${fm.work_id}" 的 editions 清單裡找不到相符項目`);
+      errors.push(`[${t.sourcePath}] edition_url "${fm.edition_url}" 在作品 "${work.sourcePath}" 的 editions 清單裡找不到相符項目`);
     }
     t.edition = edition || null;
 
     if (edition && edition.translator_id) {
       const sourceTranslator = sourceTranslators[edition.translator_id];
       if (!sourceTranslator) {
-        errors.push(`[${t.sourcePath}] edition 的 translator_id "${edition.translator_id}" 在 /content/source-translators/ 找不到對應資料夾`);
+        errors.push(`[${t.sourcePath}] edition 的 translator_id "${edition.translator_id}" 在 /content/source-translators/ 找不到 uuid 相符的檔案`);
       }
       t.sourceTranslator = sourceTranslator || null;
     } else {
@@ -209,7 +308,7 @@ function build() {
 
     const page = renderTranslation({
       title: t.frontmatter.title,
-      workUrl: `/works/${t.work.id}/`,
+      workUrl: `/works/${t.work.uuid}/`,
       workTitle: workDisplayTitle(t.work),
       workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
       translatorId: t.translatorId,
@@ -222,7 +321,7 @@ function build() {
       editionPublisher: t.edition.publisher || null,
       editionLanguage: t.edition.language,
       sourceTranslatorName,
-      sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.id}/` : null,
+      sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.uuid}/` : null,
       license: SITE_LICENSE,
       canonical: `/translations/${t.uuid}/`,
     });
@@ -243,8 +342,8 @@ function build() {
   ensureDirFor(path.join(OUT_DIR, 'translations.json'));
   fs.writeFileSync(path.join(OUT_DIR, 'translations.json'), JSON.stringify(translationsJson, null, 2), 'utf8');
 
-  // ---- /works/{work-id}/ ----
-  for (const [workId, work] of Object.entries(works)) {
+  // ---- /works/{uuid}/ ----
+  for (const [workUuid, work] of Object.entries(works)) {
     const author = sourceAuthors[work.author_id];
     const authorName = author ? pickLocalized(author.names) : '(未知作者)';
 
@@ -263,28 +362,28 @@ function build() {
         date: e.date || null,
         copyrightStatus: e.copyright_status,
       })),
-      translations: (byWork[workId] || []).map((t) => ({
+      translations: (byWork[workUuid] || []).map((t) => ({
         url: `/translations/${t.uuid}/`,
         title: t.frontmatter.title,
         translatorId: t.translatorId,
         translatorUrl: `/translators/${t.translatorId}/`,
         editionLanguage: t.edition ? t.edition.language : '?',
         sourceTranslatorName: t.sourceTranslator ? pickLocalized(t.sourceTranslator.names) : null,
-        sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.id}/` : null,
+        sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.uuid}/` : null,
         excerpt: t.frontmatter.excerpt || null,
       })),
-      canonical: `/works/${workId}/`,
+      canonical: `/works/${workUuid}/`,
     });
-    writePage(path.join(OUT_DIR, 'works', workId, 'index.html'), page);
+    writePage(path.join(OUT_DIR, 'works', workUuid, 'index.html'), page);
   }
 
   // ---- /works/(全作品列表頁,work-level:一部作品一張卡,不分譯本) ----
-  const worksIndexEntries = Object.entries(works).map(([workId, w]) => {
+  const worksIndexEntries = Object.entries(works).map(([workUuid, w]) => {
     const author = sourceAuthors[w.author_id];
-    const workTranslations = byWork[workId] || [];
+    const workTranslations = byWork[workUuid] || [];
     const translatorIds = [...new Set(workTranslations.map((t) => t.translatorId))];
     return {
-      url: `/works/${workId}/`,
+      url: `/works/${workUuid}/`,
       workTitle: workDisplayTitle(w),
       authorName: author ? pickLocalized(author.names) : '(未知作者)',
       tags: w.tags || [],
@@ -323,31 +422,31 @@ function build() {
     writePage(path.join(OUT_DIR, 'translators', translatorId, 'index.html'), page);
   }
 
-  // ---- /source-authors/{id}/ ----
-  for (const [authorId, author] of Object.entries(sourceAuthors)) {
-    const worksOfAuthor = Object.entries(works).filter(([, w]) => w.author_id === authorId);
+  // ---- /source-authors/{uuid}/ ----
+  for (const [authorUuid, author] of Object.entries(sourceAuthors)) {
+    const worksOfAuthor = Object.entries(works).filter(([, w]) => w.author_id === authorUuid);
 
     const page = renderSourceAuthor({
       name: pickLocalized(author.names),
-      works: worksOfAuthor.map(([wid, w]) => ({ url: `/works/${wid}/`, title: workDisplayTitle(w) })),
-      canonical: `/source-authors/${authorId}/`,
+      works: worksOfAuthor.map(([wUuid, w]) => ({ url: `/works/${wUuid}/`, title: workDisplayTitle(w) })),
+      canonical: `/source-authors/${authorUuid}/`,
     });
-    writePage(path.join(OUT_DIR, 'source-authors', authorId, 'index.html'), page);
+    writePage(path.join(OUT_DIR, 'source-authors', authorUuid, 'index.html'), page);
   }
 
-  // ---- /source-translators/{id}/ ----
-  for (const [stId, st] of Object.entries(sourceTranslators)) {
+  // ---- /source-translators/{uuid}/ ----
+  for (const [stUuid, st] of Object.entries(sourceTranslators)) {
     const relatedWorks = Object.entries(works).filter(([, w]) =>
-      (w.editions || []).some((e) => e.translator_id === stId)
+      (w.editions || []).some((e) => e.translator_id === stUuid)
     );
 
     const page = renderSourceTranslator({
       name: pickLocalized(st.names),
       language: st.language,
-      works: relatedWorks.map(([wid, w]) => ({ url: `/works/${wid}/`, title: workDisplayTitle(w) })),
-      canonical: `/source-translators/${stId}/`,
+      works: relatedWorks.map(([wUuid, w]) => ({ url: `/works/${wUuid}/`, title: workDisplayTitle(w) })),
+      canonical: `/source-translators/${stUuid}/`,
     });
-    writePage(path.join(OUT_DIR, 'source-translators', stId, 'index.html'), page);
+    writePage(path.join(OUT_DIR, 'source-translators', stUuid, 'index.html'), page);
   }
 
   // ---- /tags/{tag}/ ----

@@ -1,8 +1,9 @@
 ---
+uuid: 11111111-1111-4111-8111-111111111102
 title:
   ja: 人間失格
   zh: 人間失格
-author_id: dazai-osamu_Q317685
+author_id: 22222222-2222-4222-8222-222222222201
 original_language: ja
 tags: [自傳體, 頹廢, 長篇小說]
 category: 小說

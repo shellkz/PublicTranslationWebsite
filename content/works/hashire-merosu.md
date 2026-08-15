@@ -1,8 +1,9 @@
 ---
+uuid: 11111111-1111-4111-8111-111111111101
 title:
   ja: 走れメロス
   zh: 奔跑吧,梅洛斯
-author_id: dazai-osamu_Q317685
+author_id: 22222222-2222-4222-8222-222222222201
 original_language: ja
 tags: [友情, 信賴, 短篇小說]
 category: 小說

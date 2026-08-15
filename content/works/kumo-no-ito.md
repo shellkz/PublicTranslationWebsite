@@ -1,8 +1,9 @@
 ---
+uuid: 11111111-1111-4111-8111-111111111105
 title:
   ja: 蜘蛛の糸
   zh: 蜘蛛之絲
-author_id: akutagawa-ryunosuke_Q186326
+author_id: 22222222-2222-4222-8222-222222222203
 original_language: ja
 tags: [佛教, 寓言, 短篇小說]
 category: 小說
