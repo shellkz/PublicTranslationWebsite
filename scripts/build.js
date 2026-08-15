@@ -342,6 +342,26 @@ function build() {
   ensureDirFor(path.join(OUT_DIR, 'translations.json'));
   fs.writeFileSync(path.join(OUT_DIR, 'translations.json'), JSON.stringify(translationsJson, null, 2), 'utf8');
 
+  // ---- /works.json、/source-authors.json(給 /workshop/ 表單搜尋既有項目用,見架構規格.md)----
+  const worksJson = Object.entries(works).map(([uuid, w]) => ({
+    uuid,
+    title: workDisplayTitle(w),
+    authorName: sourceAuthors[w.author_id] ? pickLocalized(sourceAuthors[w.author_id].names) : null,
+    wikidataId: w.wikidata_id || null,
+    editionUrls: (w.editions || []).map((e) => e.url),
+  }));
+  ensureDirFor(path.join(OUT_DIR, 'works.json'));
+  fs.writeFileSync(path.join(OUT_DIR, 'works.json'), JSON.stringify(worksJson, null, 2), 'utf8');
+
+  const sourceAuthorsJson = Object.entries(sourceAuthors).map(([uuid, a]) => ({
+    uuid,
+    name: pickLocalized(a.names),
+    wikidataId: a.wikidata_id || null,
+    sourceUrl: a.source_url || null,
+  }));
+  ensureDirFor(path.join(OUT_DIR, 'source-authors.json'));
+  fs.writeFileSync(path.join(OUT_DIR, 'source-authors.json'), JSON.stringify(sourceAuthorsJson, null, 2), 'utf8');
+
   // ---- /works/{uuid}/ ----
   for (const [workUuid, work] of Object.entries(works)) {
     const author = sourceAuthors[work.author_id];
