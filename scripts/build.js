@@ -14,6 +14,7 @@ const { renderSourceTranslator } = require('./app/source-translator');
 const { renderTag } = require('./app/tag');
 const { renderWorksIndex } = require('./app/works-index');
 const { renderWorkshop } = require('./app/workshop');
+const { renderAbout } = require('./app/about');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
@@ -587,6 +588,9 @@ function build() {
 
   // ---- /workshop/create-translation/ ----
   writePage(path.join(OUT_DIR, 'workshop', 'create-translation', 'index.html'), renderWorkshop());
+
+  // ---- /about/ ----
+  writePage(path.join(OUT_DIR, 'about', 'index.html'), renderAbout());
 
   // ---- 複製 assets/ 靜態資源(CSS/JS)到 dist/assets/ ----
   if (fs.existsSync(ASSETS_DIR)) {

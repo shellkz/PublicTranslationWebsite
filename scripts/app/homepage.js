@@ -75,7 +75,7 @@ ${renderSearchForm()}
 </section>
 `;
 
-  return { title: '標題標題標題標題標題', body };
+  return { title: '首頁', body };
 }
 
 module.exports = { renderHomepage, renderMetaField, COVER_CLASSES };
