@@ -43,7 +43,7 @@ function renderTranslatorCard(item, index) {
       <div>
         <div class="t-name">${escapeHtml(item.displayName)}</div>
         <div class="t-desc">${escapeHtml(item.bio || '這位譯者還沒有寫自我介紹。')}</div>
-        <div class="t-count">累積 ${item.count} 篇譯文</div>
+        <div class="t-count">累積 ${item.count} 篇譯文・${escapeHtml(item.charCountDisplay)}</div>
       </div>
     </a>`;
 }
@@ -51,7 +51,7 @@ function renderTranslatorCard(item, index) {
 /**
  * @param {object} data
  * @param {Array<{url:string,title:string,translatorId:string,authorName:string,date:?string,workTitle:string}>} data.latestTranslations
- * @param {Array<{url:string,displayName:string,bio:?string,count:number}>} data.translatorList
+ * @param {Array<{url:string,displayName:string,bio:?string,count:number,charCountDisplay:string}>} data.translatorList
  */
 function renderHomepage({ latestTranslations, translatorList }) {
   const latestHtml = latestTranslations.map(renderLatestCard).join('\n');

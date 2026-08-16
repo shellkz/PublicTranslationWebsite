@@ -15,6 +15,7 @@ function renderEntryRow(t) {
  * @param {object} vm
  * @param {string} vm.displayName
  * @param {?string} vm.bio
+ * @param {string} vm.charCountDisplay 已格式化好的累計字數(如「1.1萬字」),純顯示用字串
  * @param {Array<{url:string,title:string,workTitle:string,excerpt:?string}>} vm.translations
  * @param {string} vm.canonical
  */
@@ -27,6 +28,7 @@ function renderTranslator(vm) {
   <div class="avatar-lg">${escapeHtml(initial)}</div>
   <h1>${escapeHtml(vm.displayName)}</h1>
   ${vm.bio ? `<p class="desc">${escapeHtml(vm.bio)}</p>` : ''}
+  <p class="translator-stats">已發表 ${vm.translations.length} 篇譯文・共 ${escapeHtml(vm.charCountDisplay)}</p>
 </div>
 
 <section class="block">

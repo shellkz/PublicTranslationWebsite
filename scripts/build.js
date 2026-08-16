@@ -66,6 +66,32 @@ function toPlainDate(value) {
   return value instanceof Date ? value.toISOString().slice(0, 10) : value;
 }
 
+// 譯者貢獻字數統計:只算正文(不含標題/摘要等其他欄位),流程是 markdown
+// 轉 HTML(跟頁面渲染同一支 markdown-it 實例,標題/粗體/連結等語法都會被
+// 正確轉換,不是直接對 markdown 原始碼硬砍符號)→ 剝掉 HTML 標籤 → 還原
+// markdown-it 會跳脫的幾個標準 HTML 實體 → 去除空白類字元(含全形空白,
+// JS 的 \s 不會吃到)→ 數剩下字串的長度。
+function countProseChars(markdown) {
+  const html = md.render(markdown || '');
+  const text = html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[\s　]/g, '');
+  return text.length;
+}
+
+// 中文常見的字數顯示慣例:低於一萬直接顯示數字;一萬~十萬顯示到小數點
+// 後一位的「萬」;超過十萬只顯示整數「萬」,不顯示小數。
+function formatCharCount(n) {
+  if (n < 10000) return `${n}字`;
+  if (n < 100000) return `${(n / 10000).toFixed(1)}萬字`;
+  return `${Math.round(n / 10000)}萬字`;
+}
+
 function ensureDirFor(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
@@ -164,6 +190,7 @@ function loadTranslations() {
         translatorId,
         frontmatter,
         bodyMarkdown: parsed.content || '',
+        charCount: countProseChars(parsed.content || ''),
         sourcePath,
       });
     }
@@ -463,10 +490,12 @@ function build() {
   const allTranslatorIds = new Set([...Object.keys(translators), ...Object.keys(byTranslator)]);
   for (const translatorId of allTranslatorIds) {
     const profile = translators[translatorId] || {};
+    const translatorCharCount = (byTranslator[translatorId] || []).reduce((sum, t) => sum + t.charCount, 0);
 
     const page = renderTranslator({
       displayName: profile.display_name || translatorId,
       bio: profile.bio || null,
+      charCountDisplay: formatCharCount(translatorCharCount),
       translations: (byTranslator[translatorId] || []).map((t) => ({
         url: `/translations/${t.uuid}/`,
         title: t.frontmatter.title,
@@ -542,6 +571,7 @@ function build() {
       displayName: profile.display_name || translatorId,
       bio: profile.bio || null,
       count: byTranslator[translatorId].length,
+      charCountDisplay: formatCharCount(byTranslator[translatorId].reduce((sum, t) => sum + t.charCount, 0)),
     };
   });
 

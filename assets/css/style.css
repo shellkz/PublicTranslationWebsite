@@ -356,6 +356,7 @@ footer{
   font-size:clamp(28px,4vw,42px); font-weight:700; margin-bottom:16px;
 }
 .detail-hero p.desc{font-size:14.5px; color:#4b4a44; max-width:640px; margin-bottom:16px;}
+.translator-stats{font-size:13px; color:var(--gray); letter-spacing:.03em; margin-bottom:16px;}
 .detail-meta{
   display:flex; flex-wrap:wrap; gap:8px 18px;
   font-size:13.5px; color:#4b4a44; margin-bottom:16px;
