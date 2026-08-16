@@ -6,7 +6,7 @@
 // { title, body, canonical } 就能直接套用,不用重寫 header/footer/CSS 引用。
 
 // 瀏覽器分頁標題統一結尾,單一位置維護,不用每個頁面 render 模組各自加。
-const SITE_NAME = '公領域書籍翻譯分享平台(暫定)';
+const SITE_NAME = '信標文庫';
 
 function escapeHtml(str) {
   return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({
@@ -33,8 +33,8 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<l
 <header>
   <div class="header-inner">
     <a class="logo" href="/">
-      <span class="logo-cn serif">公領域書籍翻譯分享平台</span>
-      <span class="logo-jp">開源翻譯・自由閱讀・非營利・無廣告</span>
+      <span class="logo-cn serif">信標文庫</span>
+      <span class="logo-jp">公領域文字作品翻譯分享網站</span>
     </a>
     <nav>
       <a href="/works/">全部作品</a>
