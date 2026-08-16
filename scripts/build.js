@@ -176,18 +176,48 @@ function loadTranslations() {
   return translations;
 }
 
-// ---------- 跨檔重複偵測(非阻擋,只警告)見架構規格.md 第 6 節 ----------
+// ---------- 跨檔重複偵測(硬性擋下,不是只警告)見架構規格.md 第 6 節 ----------
 
-const AOZORA_ID_RE = /aozora\.gr\.jp\/(?:cards\/\d+\/files\/(\d+)|index_pages\/person(\d+))/;
-const GUTENBERG_ID_RE = /gutenberg\.org\/(?:ebooks\/|cache\/epub\/)(\d+)/;
+// 青空文庫「作品資訊頁」(card{N}.html)跟「本文頁」(files/{N}_xxxxx.html)
+// 用的是同一個作品編號,古騰堡「作品資訊頁」(ebooks/{N})跟「本文頁」
+// (cache/epub/{N}/...)也是同一個編號——三個群組都要能各自解析出編號,
+// 跟 assets/js/workshop.js 的 AOZORA_WORK_RE/GUTENBERG_WORK_RE 等呼應。
+const AOZORA_ID_RE = /aozora\.gr\.jp\/(?:cards\/\d+\/files\/(\d+)|cards\/\d+\/card(\d+)\.html|index_pages\/person(\d+))/;
+const GUTENBERG_ID_RE = /gutenberg\.org\/(?:ebooks\/author\/(\d+)|ebooks\/(\d+)|cache\/epub\/(\d+))/;
 
 function extractSiteId(url) {
   if (!url) return null;
   const aozora = url.match(AOZORA_ID_RE);
-  if (aozora) return `aozora:${aozora[1] || aozora[2]}`;
+  if (aozora) return `aozora:${aozora[1] || aozora[2] || aozora[3]}`;
   const gutenberg = url.match(GUTENBERG_ID_RE);
-  if (gutenberg) return `gutenberg:${gutenberg[1]}`;
+  if (gutenberg) return `gutenberg:${gutenberg[1] || gutenberg[2] || gutenberg[3]}`;
   return null;
+}
+
+// 目前只收青空文庫、古騰堡計畫這兩個來源(以及未來可能新增的其他明確
+// 來源)——不再接受「自己找到的公版書」這種來源不明的網址,避免自行
+// 認定公版狀態帶來的著作權風險,見翻譯者指南.md。這裡才是真正的把關,
+// workshop 表單上的 pattern 屬性只是先在前端擋一次,擋不住的人(手動編輯
+// 檔案、不透過工具直接送 PR)還是要靠這裡。
+const AOZORA_WORK_URL_RE = /^https:\/\/www\.aozora\.gr\.jp\/cards\/\d+\/(?:card\d+\.html|files\/\d+_\d+\.html)$/;
+const GUTENBERG_WORK_URL_RE = /^https:\/\/www\.gutenberg\.org\/(?:ebooks\/\d+\/?|cache\/epub\/\d+\/.+)$/;
+
+function isRecognizedEditionUrl(url) {
+  return AOZORA_WORK_URL_RE.test(url) || GUTENBERG_WORK_URL_RE.test(url);
+}
+
+function validateEditionUrls(works) {
+  const errors = [];
+  for (const work of Object.values(works)) {
+    for (const edition of Array.isArray(work.editions) ? work.editions : []) {
+      if (edition.url && !isRecognizedEditionUrl(edition.url)) {
+        errors.push(
+          `[${work.sourcePath}] editions[].url "${edition.url}" 不是目前支援的來源格式(僅接受青空文庫、古騰堡計畫的作品資訊頁/本文頁連結)`
+        );
+      }
+    }
+  }
+  return errors;
 }
 
 // works 用 editions[].url(可能多筆),source-authors/source-translators 用 source_url(單一)
@@ -239,6 +269,7 @@ function resolveAll() {
     ...detectDuplicates(works, 'works'),
     ...detectDuplicates(sourceAuthors, 'source-authors'),
     ...detectDuplicates(sourceTranslators, 'source-translators'),
+    ...validateEditionUrls(works),
   ];
 
   for (const t of translations) {

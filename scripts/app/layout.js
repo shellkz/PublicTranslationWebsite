@@ -29,12 +29,13 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<l
 <body>
 <header>
   <div class="header-inner">
-    <div class="logo">
+    <a class="logo" href="/">
       <span class="logo-cn serif">公領域書籍翻譯閱讀平台</span>
       <span class="logo-jp">翻譯者可以貢獻翻譯，讀者可以免費閱讀，還在開發中</span>
-    </div>
+    </a>
     <nav>
       <a href="/works/">全部作品</a>
+      <a href="/workshop/create-translation/">翻譯者工坊</a>
       <a href="/#about">關於本站</a>
     </nav>
   </div>
