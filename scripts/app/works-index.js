@@ -25,7 +25,7 @@ function renderCard(entry, index) {
         <span class="cover-title">${escapeHtml(entry.workTitle)}</span>
         <span class="cover-count${isEmpty ? ' is-empty' : ''}">${entry.translationCount} 個譯本</span>
       </div>
-      <div class="card-title-cn">${escapeHtml(entry.workTitle)}</div>
+      <div class="card-title-cn">${escapeHtml(entry.workNativeTitle)}</div>
       ${renderMetaField('作者', entry.authorName)}
       ${isEmpty ? '<div class="needs-translator">尚無譯者・想挑戰看看?</div>' : ''}
     </a>`;
@@ -70,7 +70,7 @@ function renderFilters({ categories, languages, tags }) {
 /**
  * 全作品列表頁,work-level:一部作品一張卡(不分譯本)。
  * @param {object} vm
- * @param {Array<{url:string,workTitle:string,authorName:string,tags:string[],category:?string,
+ * @param {Array<{url:string,workTitle:string,workNativeTitle:string,authorName:string,tags:string[],category:?string,
  *   originalLanguage:?string,translatorIds:string[],translationCount:number,excerpt:?string}>} vm.entries
  * @param {string[]} vm.categories
  * @param {string[]} vm.languages
@@ -82,7 +82,6 @@ function renderWorksIndex({ entries, categories, languages, tags }) {
   const body = `
 <div class="detail-hero">
   <h1>全部作品</h1>
-  <p class="desc">瀏覽站內收錄的所有作品,可用下方欄位篩選——尚無譯者的作品也會列出來,歡迎認領。</p>
 </div>
 ${renderFilters({ categories, languages, tags })}
 <section class="block">

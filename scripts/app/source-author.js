@@ -5,6 +5,7 @@ const { escapeHtml } = require('./layout');
 function renderWorkRow(w) {
   return `<a class="entry-row" href="${escapeHtml(w.url)}">
       <div class="entry-title serif">${escapeHtml(w.title)}</div>
+      <div class="entry-meta">${escapeHtml(w.nativeTitle)} · ${w.translationCount} 個譯本</div>
     </a>`;
 }
 
@@ -12,7 +13,7 @@ function renderWorkRow(w) {
  * 原作者頁(寬版)。純渲染。
  * @param {object} vm
  * @param {string} vm.name
- * @param {Array<{url:string,title:string}>} vm.works
+ * @param {Array<{url:string,title:string,nativeTitle:string,translationCount:number}>} vm.works
  * @param {string} vm.canonical
  */
 function renderSourceAuthor(vm) {
@@ -27,7 +28,7 @@ function renderSourceAuthor(vm) {
 
 <section class="block">
   <div class="block-head">
-    <div class="block-title serif">站內收錄作品 <span class="jp">Works</span>(${vm.works.length})</div>
+    <div class="block-title serif">作品一覽 <span class="jp">Works</span>(${vm.works.length})</div>
   </div>
   ${vm.works.length ? `<div class="entry-list">${list}</div>` : '<p class="block-empty-note">目前還沒有這位作者的作品被登記。</p>'}
 </section>

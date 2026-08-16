@@ -26,9 +26,9 @@ function renderLatestCard(item, index) {
   const coverClass = COVER_CLASSES[index % COVER_CLASSES.length];
   return `<a class="card" href="${escapeHtml(item.url)}">
       <div class="cover ${coverClass}">
-        <span class="cover-title">${escapeHtml(item.workTitle)}</span>
+        <span class="cover-title">${escapeHtml(item.title)}</span>
       </div>
-      <div class="card-title-cn">${escapeHtml(item.title)}</div>
+      <div class="card-title-cn">${escapeHtml(item.workNativeTitle)}</div>
       ${renderMetaField('作者', item.authorName)}
       ${renderMetaField('譯者', item.translatorId)}
       ${item.date ? renderMetaField('更新於', item.date) : ''}
@@ -50,7 +50,7 @@ function renderTranslatorCard(item, index) {
 
 /**
  * @param {object} data
- * @param {Array<{url:string,title:string,translatorId:string,authorName:string,date:?string,workTitle:string}>} data.latestTranslations
+ * @param {Array<{url:string,title:string,translatorId:string,authorName:string,date:?string,workNativeTitle:string}>} data.latestTranslations
  * @param {Array<{url:string,displayName:string,bio:?string,count:number,charCountDisplay:string}>} data.translatorList
  */
 function renderHomepage({ latestTranslations, translatorList }) {

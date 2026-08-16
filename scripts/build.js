@@ -450,6 +450,7 @@ function build() {
         title: t.frontmatter.title,
         translatorId: t.translatorId,
         translatorUrl: `/translators/${t.translatorId}/`,
+        editionUrl: t.frontmatter.edition_url,
         editionLanguage: t.edition ? t.edition.language : '?',
         sourceTranslatorName: t.sourceTranslator ? pickLocalized(t.sourceTranslator.names) : null,
         sourceTranslatorUrl: t.sourceTranslator ? `/source-translators/${t.sourceTranslator.uuid}/` : null,
@@ -468,6 +469,7 @@ function build() {
     return {
       url: `/works/${workUuid}/`,
       workTitle: workDisplayTitle(w),
+      workNativeTitle: pickLocalized(w.title, ['ja', 'en', 'romaji', 'zh']),
       authorName: author ? pickLocalized(author.names) : '(未知作者)',
       tags: w.tags || [],
       category: w.category || null,
@@ -499,7 +501,7 @@ function build() {
       translations: (byTranslator[translatorId] || []).map((t) => ({
         url: `/translations/${t.uuid}/`,
         title: t.frontmatter.title,
-        workTitle: workDisplayTitle(t.work),
+        workTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
         excerpt: t.frontmatter.excerpt || null,
       })),
       canonical: `/translators/${translatorId}/`,
@@ -513,7 +515,12 @@ function build() {
 
     const page = renderSourceAuthor({
       name: pickLocalized(author.names),
-      works: worksOfAuthor.map(([wUuid, w]) => ({ url: `/works/${wUuid}/`, title: workDisplayTitle(w) })),
+      works: worksOfAuthor.map(([wUuid, w]) => ({
+        url: `/works/${wUuid}/`,
+        title: workDisplayTitle(w),
+        nativeTitle: pickLocalized(w.title, ['ja', 'en', 'romaji', 'zh']),
+        translationCount: (byWork[wUuid] || []).length,
+      })),
       canonical: `/source-authors/${authorUuid}/`,
     });
     writePage(path.join(OUT_DIR, 'source-authors', authorUuid, 'index.html'), page);
@@ -561,7 +568,7 @@ function build() {
       translatorId: t.translatorId,
       authorName: t.author ? pickLocalized(t.author.names) : '(未知作者)',
       date: t.frontmatter.date || null,
-      workTitle: workDisplayTitle(t.work),
+      workNativeTitle: pickLocalized(t.work.title, ['ja', 'en', 'romaji', 'zh']),
     }));
 
   const translatorList = Object.keys(byTranslator).map((translatorId) => {

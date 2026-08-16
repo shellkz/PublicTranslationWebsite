@@ -387,9 +387,6 @@ footer{
   background:var(--paper); padding:16px 24px;
   display:flex; flex-wrap:wrap; gap:6px 18px; align-items:baseline; font-size:13px;
 }
-.edition-lang{
-  font-family:'Shippori Mincho',serif; font-weight:700; color:var(--indigo); min-width:2.2em;
-}
 .edition-row a{color:var(--indigo); overflow-wrap:anywhere;}
 .edition-row a:hover{text-decoration:underline;}
 .edition-meta{color:var(--gray);}
