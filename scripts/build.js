@@ -597,6 +597,12 @@ function build() {
     fs.cpSync(ASSETS_DIR, path.join(OUT_DIR, 'assets'), { recursive: true });
   }
 
+  // ---- 複製 favicon.ico 到 dist/ 根目錄(跟 index.html 並排,瀏覽器預設抓 /favicon.ico)----
+  const FAVICON_PATH = path.join(ASSETS_DIR, 'images', 'favicon.ico');
+  if (fs.existsSync(FAVICON_PATH)) {
+    fs.copyFileSync(FAVICON_PATH, path.join(OUT_DIR, 'favicon.ico'));
+  }
+
   return {
     translations: translations.length,
     works: Object.keys(works).length,
