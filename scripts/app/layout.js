@@ -20,7 +20,7 @@ function escapeHtml(str) {
 
 function renderLayout({ title, body, canonical }) {
   return `<!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" class="no-js">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,6 +28,7 @@ function renderLayout({ title, body, canonical }) {
 ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700;900&family=Shippori+Mincho:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/style.css">
+<script>document.documentElement.classList.replace('no-js','js');</script>
 </head>
 <body>
 <header>
@@ -36,7 +37,13 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ''}<l
       <span class="logo-cn serif">信標文庫</span>
       <span class="logo-jp">公領域文字作品翻譯分享網站</span>
     </a>
-    <nav>
+    <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="sr-only">選單</span>
+    </button>
+    <nav id="site-nav">
       <a href="/works/">全部作品</a>
       <a href="/workshop/create-translation/">翻譯者工坊</a>
       <a href="/about/">關於</a>
@@ -55,6 +62,7 @@ ${body}
     <p class="footer-note">本專案收錄之原始文字作品皆已進入公領域 (Public Domain)。<br>由社群無償貢獻之翻譯文本，著作權歸原譯者所有，並統一以 <a class="ref-link" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> 授權釋出。<br>網站原始碼採用 <a class="ref-link" href="https://opensource.org/license/mit/">MIT</a> 授權開源於 GitHub。</p>
   </div>
 </footer>
+<script src="/assets/js/nav-toggle.js" defer></script>
 </body>
 </html>
 `;

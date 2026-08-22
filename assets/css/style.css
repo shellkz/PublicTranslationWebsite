@@ -33,7 +33,6 @@ body::before{
 
 /* ===== header ===== */
 header{
-  position:sticky; top:0; z-index:50;
   background:rgba(239,234,224,0.92);
   backdrop-filter:blur(8px);
   border-bottom:1px solid rgba(32,31,27,0.1);
@@ -56,7 +55,32 @@ nav a::after{
   background:var(--seal); transition:width .25s ease;
 }
 nav a:hover::after{width:100%;}
-@media (max-width:720px){ nav{display:none;} }
+
+.sr-only{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0,0,0,0); white-space:nowrap; border:0; padding:0; margin:-1px;
+}
+
+/* 漢堡按鈕預先放在 HTML 裡,但預設(無 JS 或寬螢幕)不顯示——
+   沒有 JS 時 nav 直接展開,不靠這顆按鈕也能看到完整導覽,見 nav-toggle.js。 */
+.nav-toggle{
+  display:none;
+  flex-direction:column; justify-content:center; gap:5px;
+  width:32px; height:32px; padding:0;
+  background:none; border:none; cursor:pointer;
+}
+.nav-toggle-bar{display:block; width:100%; height:2px; background:var(--ink);}
+
+@media (max-width:720px){
+  .js .header-inner{flex-wrap:wrap;}
+  .js .nav-toggle{display:flex;}
+  .js nav{
+    display:none;
+    flex-basis:100%; flex-direction:column; gap:18px;
+    padding-top:18px;
+  }
+  .js nav.is-open{display:flex;}
+}
 
 /* ===== hero ===== */
 .hero{
